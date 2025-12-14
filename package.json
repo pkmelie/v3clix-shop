@@ -4,9 +4,9 @@
   "description": "Boutique V3clix avec paiements automatisés",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "npx vite",
     "build": "npx vite build",
-    "preview": "vite preview",
+    "preview": "npx vite preview",
     "test-webhook": "node test-webhook.js"
   },
   "dependencies": {
