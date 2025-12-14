@@ -8,29 +8,34 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { priceId, packName } = req.body;
+    const { priceId, packName, email } = req.body;
 
-    // Créer une session Stripe Checkout
+    if (!priceId) {
+      return res.status(400).json({ error: 'priceId manquant' });
+    }
+
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card', 'paypal'],
+      mode: 'payment',
+      payment_method_types: ['card'], // PayPal se gère côté Stripe
       line_items: [
         {
           price: priceId,
           quantity: 1,
         },
       ],
-      mode: 'payment',
-      success_url: `${process.env.SITE_URL || 'https://v3clix-store.vercel.app'}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.SITE_URL || 'https://v3clix-store.vercel.app'}`,
-      customer_email: req.body.email || undefined,
+      success_url: `${process.env.SITE_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.SITE_URL}`,
+      customer_email: email || undefined,
       metadata: {
-        packName: packName,
+        packName,
       },
     });
 
-    res.status(200).json({ sessionId: session.id, url: session.url });
+    res.status(200).json({
+      url: session.url,
+    });
   } catch (error) {
-    console.error('Erreur création session:', error);
+    console.error('Stripe error:', error);
     res.status(500).json({ error: error.message });
   }
 }
