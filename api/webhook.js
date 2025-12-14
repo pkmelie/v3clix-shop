@@ -117,18 +117,16 @@ function getEmailTemplate(customerName, packName, downloadUrl) {
   `;
 }
 
-// Mapping des produits Stripe vers les fichiers ZIP
-// À personnaliser avec vos vrais Price IDs de Stripe
 const PRODUCT_MAPPING = {
-  'price_1234567890': { // Remplacez par votre vrai Price ID
+  'price_1SduWB6merlTwGt5ipy9GwpD': {
     name: 'Pack V3clix réaliste 1',
     fileName: 'pack-v3clix-1.zip'
   },
-  'price_0987654321': {
-    name: 'Pack V3clix réaliste 2',
-    fileName: 'pack-v3clix-2.zip'
-  },
-  // Ajoutez tous vos packs ici
+  // Quand vous ajoutez un nouveau pack :
+  // 'price_NOUVEAU123': {
+  //   name: 'Pack V3clix réaliste 2',
+  //   fileName: 'pack-v3clix-2.zip'
+  // },
 };
 
 // Handler principal du webhook

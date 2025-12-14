@@ -13,11 +13,11 @@ export default function V3clixStore() {
     loadPacks();
   }, []);
 
-  const loadPacks = async () => {
+  const loadPacks = () => {
     try {
-      const result = await window.storage.get('v3clix-packs');
-      if (result && result.value) {
-        setPacks(JSON.parse(result.value));
+      const saved = localStorage.getItem('v3clix-packs');
+      if (saved) {
+        setPacks(JSON.parse(saved));
       } else {
         const defaultPacks = [
           {
@@ -32,29 +32,16 @@ export default function V3clixStore() {
           }
         ];
         setPacks(defaultPacks);
-        await window.storage.set('v3clix-packs', JSON.stringify(defaultPacks));
+        localStorage.setItem('v3clix-packs', JSON.stringify(defaultPacks));
       }
     } catch (error) {
       console.log('Première utilisation');
-      const defaultPacks = [
-        {
-          id: '1',
-          name: 'Pack V3clix réaliste 1',
-          price: 9.99,
-          description: 'Premier pack de contenus réalistes',
-          image: '',
-          videoUrl: '',
-          zipUrl: '',
-          featured: true
-        }
-      ];
-      setPacks(defaultPacks);
     }
   };
 
-  const savePacks = async (newPacks) => {
+  const savePacks = (newPacks) => {
     try {
-      await window.storage.set('v3clix-packs', JSON.stringify(newPacks));
+      localStorage.setItem('v3clix-packs', JSON.stringify(newPacks));
       setPacks(newPacks);
     } catch (error) {
       console.error('Erreur sauvegarde:', error);
@@ -87,7 +74,7 @@ export default function V3clixStore() {
     setShowAddForm(true);
   };
 
-  const handleSavePack = async () => {
+  const handleSavePack = () => {
     if (!editingPack.name || !editingPack.price) {
       alert('Nom et prix sont obligatoires');
       return;
@@ -102,20 +89,57 @@ export default function V3clixStore() {
       newPacks = [...packs, editingPack];
     }
 
-    await savePacks(newPacks);
+    savePacks(newPacks);
     setEditingPack(null);
     setShowAddForm(false);
   };
 
-  const handleDeletePack = async (packId) => {
+  const handleDeletePack = (packId) => {
     if (confirm('Supprimer ce pack ?')) {
       const newPacks = packs.filter(p => p.id !== packId);
-      await savePacks(newPacks);
+      savePacks(newPacks);
     }
   };
 
-  const handleBuyPack = (pack) => {
-    alert(`Redirection vers Stripe pour ${pack.name} - ${pack.price}€\n\nÀ configurer avec votre compte Stripe`);
+  const handleBuyPack = async (pack) => {
+    try {
+      // Mapping des packs vers les Price IDs Stripe
+      const priceMapping = {
+        'Pack V3clix réaliste 1': 'price_1SduWB6merlTwGt5ipy9GwpD',
+        // Ajoutez vos futurs packs ici avec leur Price ID
+      };
+
+      const priceId = priceMapping[pack.name];
+
+      if (!priceId) {
+        alert('Ce pack n\'est pas encore configuré dans Stripe');
+        return;
+      }
+
+      // Appeler l'API pour créer la session Stripe
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          priceId: priceId,
+          packName: pack.name,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.url) {
+        // Rediriger vers Stripe Checkout
+        window.location.href = data.url;
+      } else {
+        alert('Erreur lors de la création de la session de paiement');
+      }
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert('Une erreur est survenue. Réessayez.');
+    }
   };
 
   const handleImageUpload = (e) => {
