@@ -1,20 +1,23 @@
 import Stripe from 'stripe';
 import { Resend } from 'resend';
+import { buffer } from 'micro';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Mapping des produits
-const PRODUCT_MAPPING = {
-  'price_1SduWB6merlTwGt5ipy9GwpD': {
-    name: 'Pack V3clix réaliste 1',
-    fileName: 'pack-v3clix-1.zip',
-    // Pour l'instant, utilisez un lien direct au lieu de S3
-    downloadUrl: 'https://votre-lien-contabo.com/pack-v3clix-1.zip'
+export const config = {
+  api: {
+    bodyParser: false,
   },
 };
 
-// Template email
+const PRODUCT_MAPPING = {
+  'price_1SduWB6merlTwGt5ipy9GwpD': {
+    name: 'Pack V3clix réaliste 1',
+    downloadUrl: 'https://votre-lien.com/pack.zip'
+  },
+};
+
 function getEmailTemplate(customerName, packName, downloadUrl) {
   return `
     <!DOCTYPE html>
@@ -26,7 +29,6 @@ function getEmailTemplate(customerName, packName, downloadUrl) {
           .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
           .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
           .button { display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 5px; margin: 20px 0; font-weight: bold; }
-          .warning { background: #fff3cd; border-left: 4px solid #ffc107; padding: 10px; margin: 20px 0; }
           .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
         </style>
       </head>
@@ -37,14 +39,10 @@ function getEmailTemplate(customerName, packName, downloadUrl) {
         <div class="content">
           <p>Bonjour ${customerName},</p>
           <p>Merci d'avoir acheté <strong>${packName}</strong> !</p>
-          <p>Votre contenu est prêt à être téléchargé :</p>
+          <p>Votre contenu est prêt :</p>
           <center>
             <a href="${downloadUrl}" class="button">📥 Télécharger mon pack</a>
           </center>
-          <div class="warning">
-            <strong>⚠️ Important :</strong> Téléchargez votre pack rapidement.
-          </div>
-          <p>Si vous rencontrez un problème, contactez-nous.</p>
           <p>Cordialement,<br><strong>L'équipe V3clix</strong></p>
         </div>
         <div class="footer">
@@ -61,36 +59,25 @@ export default async function handler(req, res) {
   }
 
   const sig = req.headers['stripe-signature'];
-  
   let event;
-  let body;
 
   try {
-    // Lire le body correctement pour Vercel
-    if (typeof req.body === 'string') {
-      body = req.body;
-    } else {
-      body = JSON.stringify(req.body);
-    }
-
+    const buf = await buffer(req);
+    
     event = stripe.webhooks.constructEvent(
-      body,
+      buf,
       sig,
       process.env.STRIPE_WEBHOOK_SECRET
     );
   } catch (err) {
-    console.error('Webhook error:', err.message);
+    console.error('Webhook signature error:', err.message);
     return res.status(400).json({ error: `Webhook Error: ${err.message}` });
   }
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
     
-    console.log('Payment received:', {
-      customer: session.customer_details?.email,
-      amount: session.amount_total / 100,
-      currency: session.currency,
-    });
+    console.log('✅ Payment received:', session.customer_details?.email);
 
     try {
       const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
@@ -99,10 +86,9 @@ export default async function handler(req, res) {
       const product = PRODUCT_MAPPING[priceId];
 
       if (!product) {
-        throw new Error(`Product not found for: ${priceId}`);
+        throw new Error(`Product not found: ${priceId}`);
       }
 
-      // Envoyer l'email
       const emailResult = await resend.emails.send({
         from: 'V3clix Store <onboarding@resend.dev>',
         to: session.customer_details.email,
@@ -114,15 +100,12 @@ export default async function handler(req, res) {
         ),
       });
 
-      console.log('Email sent:', emailResult);
+      console.log('✅ Email sent:', emailResult.id);
 
-      return res.status(200).json({ 
-        received: true, 
-        emailSent: true 
-      });
+      return res.status(200).json({ received: true, emailSent: true });
 
     } catch (error) {
-      console.error('Error:', error);
+      console.error('❌ Error:', error.message);
       return res.status(500).json({ error: error.message });
     }
   }
