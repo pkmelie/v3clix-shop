@@ -1,264 +1,131 @@
-<<<<<<< HEAD
-// test-webhook.js
-// Script pour tester le système de webhook localement
-
 import Stripe from 'stripe';
-import dotenv from 'dotenv';
-
-dotenv.config({ path: '.env.local' });
+import { Resend } from 'resend';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-async function testWebhook() {
-  console.log('🧪 Test du système de webhook V3clix\n');
+// Mapping des produits
+const PRODUCT_MAPPING = {
+  'price_1SduWB6merlTwGt5ipy9GwpD': {
+    name: 'Pack V3clix réaliste 1',
+    fileName: 'pack-v3clix-1.zip',
+    // Pour l'instant, utilisez un lien direct au lieu de S3
+    downloadUrl: 'https://votre-lien-contabo.com/pack-v3clix-1.zip'
+  },
+};
+
+// Template email
+function getEmailTemplate(customerName, packName, downloadUrl) {
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+          .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+          .button { display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 5px; margin: 20px 0; font-weight: bold; }
+          .warning { background: #fff3cd; border-left: 4px solid #ffc107; padding: 10px; margin: 20px 0; }
+          .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>🎉 Merci pour votre achat !</h1>
+        </div>
+        <div class="content">
+          <p>Bonjour ${customerName},</p>
+          <p>Merci d'avoir acheté <strong>${packName}</strong> !</p>
+          <p>Votre contenu est prêt à être téléchargé :</p>
+          <center>
+            <a href="${downloadUrl}" class="button">📥 Télécharger mon pack</a>
+          </center>
+          <div class="warning">
+            <strong>⚠️ Important :</strong> Téléchargez votre pack rapidement.
+          </div>
+          <p>Si vous rencontrez un problème, contactez-nous.</p>
+          <p>Cordialement,<br><strong>L'équipe V3clix</strong></p>
+        </div>
+        <div class="footer">
+          <p>© ${new Date().getFullYear()} V3clix Store</p>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const sig = req.headers['stripe-signature'];
+  
+  let event;
+  let body;
 
   try {
-    // 1. Créer une session de paiement test
-    console.log('1. Création d\'une session de paiement test...');
+    // Lire le body correctement pour Vercel
+    if (typeof req.body === 'string') {
+      body = req.body;
+    } else {
+      body = JSON.stringify(req.body);
+    }
+
+    event = stripe.webhooks.constructEvent(
+      body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET
+    );
+  } catch (err) {
+    console.error('Webhook error:', err.message);
+    return res.status(400).json({ error: `Webhook Error: ${err.message}` });
+  }
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
     
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price: 'price_1234567890', // Remplacez par un vrai Price ID
-          quantity: 1,
-        },
-      ],
-      mode: 'payment',
-      success_url: 'https://v3clix.shop/success',
-      cancel_url: 'https://v3clix.shop/cancel',
-      customer_email: 'test@example.com',
+    console.log('Payment received:', {
+      customer: session.customer_details?.email,
+      amount: session.amount_total / 100,
+      currency: session.currency,
     });
 
-    console.log('✅ Session créée:', session.id);
-    console.log('📧 Email client:', session.customer_email);
-    console.log('💰 Montant:', session.amount_total / 100, session.currency.toUpperCase());
-    
-    // 2. Simuler le paiement (en mode test)
-    console.log('\n2. Pour tester le paiement complet:');
-    console.log('👉 Ouvrez cette URL:', session.url);
-    console.log('💳 Utilisez la carte test: 4242 4242 4242 4242');
-    console.log('📅 Date: n\'importe quelle date future');
-    console.log('🔢 CVC: n\'importe quel 3 chiffres');
-    
-    // 3. Instructions pour vérifier le webhook
-    console.log('\n3. Vérification du webhook:');
-    console.log('👉 Dashboard Stripe > Développeurs > Webhooks');
-    console.log('👉 Vérifiez que votre webhook reçoit l\'événement');
-    console.log('👉 Vérifiez les logs Vercel pour voir l\'exécution');
-    
-    // 4. Test de l'email
-    console.log('\n4. Test de l\'email:');
-    console.log('👉 Après le paiement, un email doit arriver à:', session.customer_email);
-    console.log('👉 Vérifiez aussi les spams');
-    console.log('👉 Dashboard Resend pour voir les logs d\'envoi');
-    
-  } catch (error) {
-    console.error('❌ Erreur:', error.message);
-    
-    if (error.code === 'resource_missing') {
-      console.log('\n💡 Conseil: Vérifiez que le Price ID existe dans votre Dashboard Stripe');
+    try {
+      const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
+      const priceId = lineItems.data[0]?.price?.id;
+
+      const product = PRODUCT_MAPPING[priceId];
+
+      if (!product) {
+        throw new Error(`Product not found for: ${priceId}`);
+      }
+
+      // Envoyer l'email
+      const emailResult = await resend.emails.send({
+        from: 'V3clix Store <onboarding@resend.dev>',
+        to: session.customer_details.email,
+        subject: `Votre ${product.name} est prêt !`,
+        html: getEmailTemplate(
+          session.customer_details?.name || 'Client',
+          product.name,
+          product.downloadUrl
+        ),
+      });
+
+      console.log('Email sent:', emailResult);
+
+      return res.status(200).json({ 
+        received: true, 
+        emailSent: true 
+      });
+
+    } catch (error) {
+      console.error('Error:', error);
+      return res.status(500).json({ error: error.message });
     }
   }
-}
 
-// Test de connexion aux services
-async function testConnections() {
-  console.log('🔌 Test des connexions aux services...\n');
-  
-  // Test Stripe
-  try {
-    const balance = await stripe.balance.retrieve();
-    console.log('✅ Stripe connecté - Solde:', balance.available[0].amount / 100, balance.available[0].currency.toUpperCase());
-  } catch (error) {
-    console.error('❌ Stripe:', error.message);
-  }
-  
-  // Test Resend
-  try {
-    const { Resend } = await import('resend');
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    console.log('✅ Resend connecté');
-  } catch (error) {
-    console.error('❌ Resend:', error.message);
-  }
-  
-  // Test Storage
-  try {
-    const { S3Client, ListBucketsCommand } = await import('@aws-sdk/client-s3');
-    const s3 = new S3Client({
-      region: 'eu-2',
-      endpoint: process.env.STORAGE_ENDPOINT,
-      credentials: {
-        accessKeyId: process.env.STORAGE_ACCESS_KEY,
-        secretAccessKey: process.env.STORAGE_SECRET_KEY,
-      },
-    });
-    
-    const buckets = await s3.send(new ListBucketsCommand({}));
-    console.log('✅ Storage connecté - Buckets:', buckets.Buckets.length);
-  } catch (error) {
-    console.error('❌ Storage:', error.message);
-  }
-  
-  console.log('\n');
-}
-
-// Menu principal
-const args = process.argv.slice(2);
-
-if (args[0] === 'test') {
-  testWebhook();
-} else if (args[0] === 'check') {
-  testConnections();
-} else {
-  console.log(`
-📦 Script de test V3clix
-
-Usage:
-  npm run test-webhook        - Affiche les commandes disponibles
-  node test-webhook.js test   - Créer une session de paiement test
-  node test-webhook.js check  - Vérifier les connexions aux services
-
-Variables d'environnement requises:
-  - STRIPE_SECRET_KEY
-  - RESEND_API_KEY
-  - STORAGE_ENDPOINT
-  - STORAGE_ACCESS_KEY
-  - STORAGE_SECRET_KEY
-
-Assurez-vous d'avoir un fichier .env.local configuré.
-  `);
-=======
-// test-webhook.js
-// Script pour tester le système de webhook localement
-
-import Stripe from 'stripe';
-import dotenv from 'dotenv';
-
-dotenv.config({ path: '.env.local' });
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
-async function testWebhook() {
-  console.log('🧪 Test du système de webhook V3clix\n');
-
-  try {
-    // 1. Créer une session de paiement test
-    console.log('1. Création d\'une session de paiement test...');
-    
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price: 'price_1234567890', // Remplacez par un vrai Price ID
-          quantity: 1,
-        },
-      ],
-      mode: 'payment',
-      success_url: 'https://v3clix.shop/success',
-      cancel_url: 'https://v3clix.shop/cancel',
-      customer_email: 'test@example.com',
-    });
-
-    console.log('✅ Session créée:', session.id);
-    console.log('📧 Email client:', session.customer_email);
-    console.log('💰 Montant:', session.amount_total / 100, session.currency.toUpperCase());
-    
-    // 2. Simuler le paiement (en mode test)
-    console.log('\n2. Pour tester le paiement complet:');
-    console.log('👉 Ouvrez cette URL:', session.url);
-    console.log('💳 Utilisez la carte test: 4242 4242 4242 4242');
-    console.log('📅 Date: n\'importe quelle date future');
-    console.log('🔢 CVC: n\'importe quel 3 chiffres');
-    
-    // 3. Instructions pour vérifier le webhook
-    console.log('\n3. Vérification du webhook:');
-    console.log('👉 Dashboard Stripe > Développeurs > Webhooks');
-    console.log('👉 Vérifiez que votre webhook reçoit l\'événement');
-    console.log('👉 Vérifiez les logs Vercel pour voir l\'exécution');
-    
-    // 4. Test de l'email
-    console.log('\n4. Test de l\'email:');
-    console.log('👉 Après le paiement, un email doit arriver à:', session.customer_email);
-    console.log('👉 Vérifiez aussi les spams');
-    console.log('👉 Dashboard Resend pour voir les logs d\'envoi');
-    
-  } catch (error) {
-    console.error('❌ Erreur:', error.message);
-    
-    if (error.code === 'resource_missing') {
-      console.log('\n💡 Conseil: Vérifiez que le Price ID existe dans votre Dashboard Stripe');
-    }
-  }
-}
-
-// Test de connexion aux services
-async function testConnections() {
-  console.log('🔌 Test des connexions aux services...\n');
-  
-  // Test Stripe
-  try {
-    const balance = await stripe.balance.retrieve();
-    console.log('✅ Stripe connecté - Solde:', balance.available[0].amount / 100, balance.available[0].currency.toUpperCase());
-  } catch (error) {
-    console.error('❌ Stripe:', error.message);
-  }
-  
-  // Test Resend
-  try {
-    const { Resend } = await import('resend');
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    console.log('✅ Resend connecté');
-  } catch (error) {
-    console.error('❌ Resend:', error.message);
-  }
-  
-  // Test Storage
-  try {
-    const { S3Client, ListBucketsCommand } = await import('@aws-sdk/client-s3');
-    const s3 = new S3Client({
-      region: 'eu-2',
-      endpoint: process.env.STORAGE_ENDPOINT,
-      credentials: {
-        accessKeyId: process.env.STORAGE_ACCESS_KEY,
-        secretAccessKey: process.env.STORAGE_SECRET_KEY,
-      },
-    });
-    
-    const buckets = await s3.send(new ListBucketsCommand({}));
-    console.log('✅ Storage connecté - Buckets:', buckets.Buckets.length);
-  } catch (error) {
-    console.error('❌ Storage:', error.message);
-  }
-  
-  console.log('\n');
-}
-
-// Menu principal
-const args = process.argv.slice(2);
-
-if (args[0] === 'test') {
-  testWebhook();
-} else if (args[0] === 'check') {
-  testConnections();
-} else {
-  console.log(`
-📦 Script de test V3clix
-
-Usage:
-  npm run test-webhook        - Affiche les commandes disponibles
-  node test-webhook.js test   - Créer une session de paiement test
-  node test-webhook.js check  - Vérifier les connexions aux services
-
-Variables d'environnement requises:
-  - STRIPE_SECRET_KEY
-  - RESEND_API_KEY
-  - STORAGE_ENDPOINT
-  - STORAGE_ACCESS_KEY
-  - STORAGE_SECRET_KEY
-
-Assurez-vous d'avoir un fichier .env.local configuré.
-  `);
->>>>>>> 18043f8 (Sauvegarde des changements locaux)
+  return res.status(200).json({ received: true });
 }
