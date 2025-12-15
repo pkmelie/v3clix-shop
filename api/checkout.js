@@ -20,8 +20,8 @@ export default async function handler(req, res) {
         },
       ],
       mode: 'payment',
-      success_url: `${process.env.SITE_URL || 'https://v3clix-store.vercel.app'}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.SITE_URL || 'https://v3clix-store.vercel.app'}`,
+      success_url: `${req.headers.origin}/?success=true`,
+      cancel_url: `${req.headers.origin}/?canceled=true`,
       customer_email: req.body.email || undefined,
       metadata: {
         packName: packName,
