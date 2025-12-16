@@ -112,7 +112,7 @@ export default function V3clixStore() {
       const priceId = priceMapping[pack.name];
 
       if (!priceId) {
-        alert('Ce pack n\'est pas encore configuré dans Stripe');
+        alert('Ce pack n\'est pas encore configuré dans Stripe.');
         return;
       }
 
