@@ -11,8 +11,9 @@ export const config = {
   },
 };
 
+
 const PRODUCT_MAPPING = {
-  'price_1SduWB6merlTwGt5ipy9GwpD': {
+  'price_1Seu5Y4joDytcB3qNjrV6Lkb': {
     name: 'Pack V3clix réaliste 1',
     downloadUrl: 'https://eu2.contabostorage.com/a1ebf2af76e940ebadda8eeb2e11ada2:v3clix-files/Pack_by_V3clix.rar'
   },
