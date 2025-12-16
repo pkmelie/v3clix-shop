@@ -10,7 +10,7 @@ const PRODUCT_MAPPING = {
     name: 'Pack V3clix réaliste 1',
     fileName: 'pack-v3clix-1.zip',
     // Pour l'instant, utilisez un lien direct au lieu de S3
-    downloadUrl: 'https://votre-lien-contabo.com/pack-v3clix-1.zip'
+    downloadUrl: 'https://eu2.contabostorage.com/a1ebf2af76e940ebadda8eeb2e11ada2:v3clix-files/Pack_by_V3clix.rar'
   },
 };
 

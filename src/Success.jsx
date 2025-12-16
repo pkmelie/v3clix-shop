@@ -16,7 +16,7 @@ export default function Success() {
         
           href="/"
           className="inline-block px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
-        >
+        
           Retour à l'accueil
         </a>
       </div>
