@@ -105,7 +105,7 @@ export default function V3clixStore() {
     try {
       // Mapping des packs vers les Price IDs Stripe
       const priceMapping = {
-        'Pack V3clix réaliste 1': 'price_1Seu5Y4joDytcB3qNjrV6Lkb',
+        'Pack V3clix réaliste 1': 'price_1Sf1Yf4joDytcB3qWHwVhwYV',
         // Ajoutez vos futurs packs ici avec leur Price ID
       };
 
