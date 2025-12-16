@@ -91,7 +91,7 @@ export default async function handler(req, res) {
       }
 
       const emailResult = await resend.emails.send({
-        from: 'V3clix Store <noreply@send.v3clix-shop.com>',
+        from: 'V3clix Store <noreply@v3clix-shop.com>',
         to: session.customer_details.email,
         subject: `Votre ${product.name} est prêt !`,
         html: getEmailTemplate(
