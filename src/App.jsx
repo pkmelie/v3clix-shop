@@ -188,7 +188,7 @@ export default function V3clixStore() {
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-              <img src="logo.png" alt="V3clix Logo" className="w-7 h-7" />
+              <img src="/logo.png" alt="V3clix Logo" className="w-7 h-7" />
             </div>
             <h1 className="text-2xl font-bold text-white">V3clix Store</h1>
           </div>
