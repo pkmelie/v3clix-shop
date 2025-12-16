@@ -13,10 +13,10 @@ export default function Success() {
         <p className="text-sm text-slate-400 mb-6">
           Vérifiez aussi vos spams si vous ne voyez pas l'email.
         </p>
-        
+        <a
           href="/"
           className="inline-block px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
-        
+        >
           Retour à l'accueil
         </a>
       </div>
