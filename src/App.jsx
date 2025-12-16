@@ -9,6 +9,7 @@ export default function V3clixStore() {
   const [editingPack, setEditingPack] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     loadPacks();
@@ -146,14 +147,68 @@ export default function V3clixStore() {
     }
   };
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const file = e.target.files[0];
-    if (file) {
+    if (!file) return;
+
+    // Vérifier la taille (max 10 MB)
+    if (file.size > 10 * 1024 * 1024) {
+      alert('❌ Image trop grande (max 10 MB)');
+      return;
+    }
+
+    // Vérifier le type
+    if (!file.type.startsWith('image/')) {
+      alert('❌ Fichier invalide. Veuillez sélectionner une image.');
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      // Lire le fichier en base64
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setEditingPack({...editingPack, image: reader.result});
+      
+      reader.onload = async () => {
+        try {
+          // Appeler l'API d'upload
+          const response = await fetch('/api/upload-image', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              image: reader.result,
+              fileName: file.name.replace(/\.[^/.]+$/, ''), // Sans extension
+            }),
+          });
+
+          const data = await response.json();
+
+          if (data.success && data.url) {
+            setEditingPack({...editingPack, image: data.url});
+            alert('✅ Image uploadée avec succès !');
+          } else {
+            throw new Error(data.message || 'Upload failed');
+          }
+        } catch (error) {
+          console.error('Erreur upload:', error);
+          alert('❌ Erreur lors de l\'upload : ' + error.message);
+        } finally {
+          setUploading(false);
+        }
       };
+
+      reader.onerror = () => {
+        alert('❌ Erreur lors de la lecture du fichier');
+        setUploading(false);
+      };
+
       reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert('❌ Une erreur est survenue');
+      setUploading(false);
     }
   };
 
@@ -188,7 +243,7 @@ export default function V3clixStore() {
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-              <img src="/logo.png" alt="V3clix Logo" className="w-7 h-7" />
+              <span className="text-white font-bold text-xl">V3</span>
             </div>
             <h1 className="text-2xl font-bold text-white">V3clix Store</h1>
           </div>
@@ -294,14 +349,22 @@ export default function V3clixStore() {
                   type="file"
                   accept="image/*"
                   onChange={handleImageUpload}
-                  className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white mb-2"
+                  disabled={uploading}
+                  className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white mb-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
+                {uploading && (
+                  <div className="flex items-center gap-2 mb-2 text-purple-400">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-400"></div>
+                    <p className="text-sm">Upload en cours...</p>
+                  </div>
+                )}
                 <input
                   type="text"
                   value={editingPack?.image || ''}
                   onChange={(e) => setEditingPack({...editingPack, image: e.target.value})}
                   placeholder="Ou coller une URL d'image"
-                  className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
+                  disabled={uploading}
+                  className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white disabled:opacity-50"
                 />
                 {editingPack?.image && (
                   <img src={editingPack.image} alt="Preview" className="mt-2 h-32 object-cover rounded-lg" />
@@ -485,9 +548,9 @@ export default function V3clixStore() {
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="flex flex-col items-center gap-4">
             <div className="flex items-center gap-4">
-              <p className="text-slate-400">© 2025 V3clix Store - Tous droits réservés</p>
+              <p className="text-slate-400">© 2024 V3clix Store - Tous droits réservés</p>
               <a
-                href="https://discord.gg/vUKTX9MC" 
+                href="https://discord.gg/VOTRE_INVITE" 
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"

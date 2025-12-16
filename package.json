@@ -10,7 +10,7 @@
     "test-webhook": "node test-webhook.js"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.490.0",
+    "@aws-sdk/client-s3": "^3.953.0",
     "@aws-sdk/s3-request-presigner": "^3.490.0",
     "lucide-react": "^0.263.1",
     "micro": "^10.0.1",
