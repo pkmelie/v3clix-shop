@@ -479,18 +479,7 @@ export default function V3clixStore() {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">URL du fichier ZIP</label>
-                <input
-                  type="text"
-                  value={editingPack?.zip_url || ''}
-                  onChange={(e) => setEditingPack({...editingPack, zip_url: e.target.value})}
-                  placeholder="https://votre-stockage.com/pack.zip"
-                  className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
-                />
-                <p className="text-xs text-slate-400 mt-1">Uploadez votre ZIP sur Contabo et collez le lien ici</p>
-              </div>
-
+             
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">Stribe Price ID</label>
                 <input
