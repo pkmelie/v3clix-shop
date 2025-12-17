@@ -70,7 +70,7 @@ export default function V3clixStore() {
   };
 
   const handleAdminLogin = () => {
-    if (adminPassword === 'admin123') {
+    if (adminPassword === 'Elieleo.31') {
       setIsAdmin(true);
       setShowAdminLogin(false);
       setAdminPassword('');
@@ -669,7 +669,7 @@ export default function V3clixStore() {
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="flex flex-col items-center gap-4">
             <div className="flex items-center gap-4">
-              <p className="text-slate-400">© 2024 V3clix Store - Tous droits réservés</p>
+              <p className="text-slate-400">© 2025 V3clix Store - Tous droits réservés</p>
               <a
                 href="https://discord.gg/QykwfUTKc5" 
                 target="_blank"
