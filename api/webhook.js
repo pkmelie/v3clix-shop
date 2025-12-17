@@ -50,28 +50,285 @@ function getEmailTemplate(customerName, packName, downloadUrl) {
   <html>
     <head>
       <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <style>
-        body { font-family: Arial, sans-serif; background:#f5f5f5; padding:20px; margin:0; }
-        .box { background:white; padding:30px; border-radius:8px; max-width:600px; margin:0 auto; }
-        .btn { display:inline-block; background:#667eea; color:white; padding:15px 30px; text-decoration:none; border-radius:5px; margin:20px 0; }
-        .btn:hover { background:#5568d3; }
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+      
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          padding: 40px 20px;
+          margin: 0;
+        }
+      
+        .email-container {
+          max-width: 600px;
+          margin: 0 auto;
+          background: white;
+          border-radius: 16px;
+          overflow: hidden;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+      
+        .header {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          padding: 40px 30px;
+          text-align: center;
+          position: relative;
+          overflow: hidden;
+        }
+      
+        .header::before {
+          content: '';
+          position: absolute;
+          top: -50%;
+          left: -50%;
+          width: 200%;
+          height: 200%;
+          background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+          animation: pulse 3s ease-in-out infinite;
+        }
+      
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); opacity: 0.5; }
+          50% { transform: scale(1.1); opacity: 0.8; }
+        }
+      
+        .logo-container {
+          position: relative;
+          z-index: 2;
+          margin-bottom: 20px;
+        }
+      
+        .logo {
+          width: 120px;
+          height: 120px;
+          background: white;
+          border-radius: 20px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+          animation: float 3s ease-in-out infinite;
+        }
+      
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
+        }
+      
+        .logo img {
+          max-width: 80%;
+          max-height: 80%;
+          object-fit: contain;
+        }
+      
+        .header h1 {
+          color: white;
+          font-size: 28px;
+          font-weight: 700;
+          position: relative;
+          z-index: 2;
+          text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+      
+        .content {
+          padding: 40px 30px;
+        }
+      
+        .greeting {
+          font-size: 18px;
+          color: #333;
+          margin-bottom: 15px;
+          font-weight: 600;
+        }
+      
+        .message {
+          font-size: 16px;
+          color: #555;
+          line-height: 1.6;
+          margin-bottom: 30px;
+        }
+      
+        .pack-name {
+          color: #667eea;
+          font-weight: 700;
+          font-size: 18px;
+        }
+      
+        .download-section {
+          text-align: center;
+          margin: 40px 0;
+        }
+      
+        .btn {
+          display: inline-block;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          padding: 18px 40px;
+          text-decoration: none;
+          border-radius: 50px;
+          font-weight: 700;
+          font-size: 16px;
+          box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+          transition: all 0.3s ease;
+          position: relative;
+          overflow: hidden;
+        }
+      
+        .btn::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+          transition: left 0.5s;
+        }
+      
+        .btn:hover::before {
+          left: 100%;
+        }
+      
+        .btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 15px 40px rgba(102, 126, 234, 0.6);
+        }
+      
+        .btn-icon {
+          margin-right: 8px;
+          font-size: 20px;
+        }
+      
+        .security-note {
+          background: linear-gradient(135deg, #f5f7ff 0%, #ede9fe 100%);
+          border-left: 4px solid #667eea;
+          padding: 15px 20px;
+          border-radius: 8px;
+          margin: 30px 0;
+        }
+      
+        .security-note p {
+          color: #667eea;
+          font-size: 14px;
+          margin: 0;
+          font-weight: 600;
+        }
+      
+        .divider {
+          height: 1px;
+          background: linear-gradient(90deg, transparent, #e0e0e0, transparent);
+          margin: 30px 0;
+        }
+      
+        .footer {
+          text-align: center;
+          padding: 30px;
+          background: #f9fafb;
+          border-top: 1px solid #e5e7eb;
+        }
+      
+        .footer p {
+          color: #9ca3af;
+          font-size: 14px;
+          margin: 5px 0;
+        }
+      
+        .social-links {
+          margin-top: 20px;
+        }
+      
+        .social-links a {
+          display: inline-block;
+          width: 40px;
+          height: 40px;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          border-radius: 50%;
+          margin: 0 5px;
+          line-height: 40px;
+          color: white;
+          text-decoration: none;
+          transition: transform 0.3s ease;
+        }
+      
+        .social-links a:hover {
+          transform: scale(1.1);
+        }
+      
+        .sparkle {
+          display: inline-block;
+          animation: sparkle 1.5s ease-in-out infinite;
+        }
+      
+        @keyframes sparkle {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.5; transform: scale(1.2); }
+        }
       </style>
     </head>
     <body>
-      <div class="box">
-        <h2>🎉 Merci pour votre achat !</h2>
-        <p>Bonjour ${customerName},</p>
-        <p>Vous avez acheté <strong>${packName}</strong>.</p>
-        <p>
-          <a class="btn" href="${downloadUrl}">
-            📥 Télécharger mon pack
-          </a>
-        </p>
-        <p style="color:#666; font-size:14px;">
-          Ce lien est personnel et ne doit pas être partagé.
-        </p>
-        <hr style="margin:30px 0; border:none; border-top:1px solid #eee;">
-        <p style="color:#999; font-size:12px;">— L'équipe V3clix</p>
+      <div class="email-container">
+        <!-- Header avec logo -->
+        <div class="header">
+          <div class="logo-container">
+            <div class="logo">
+              <!-- Remplacez cette URL par votre logo -->
+              <img src="https://via.placeholder.com/100x100/667eea/ffffff?text=V3CLIX" alt="V3clix Logo">
+            </div>
+          </div>
+          <h1><span class="sparkle">✨</span> Merci pour votre achat ! <span class="sparkle">✨</span></h1>
+        </div>
+      
+        <!-- Contenu principal -->
+        <div class="content">
+          <p class="greeting">Bonjour ${customerName} 👋</p>
+        
+          <p class="message">
+            Nous sommes ravis de vous compter parmi nos clients !<br>
+            Vous venez d'acheter <span class="pack-name">${packName}</span> et votre commande est prête.
+          </p>
+        
+          <!-- Bouton de téléchargement -->
+          <div class="download-section">
+            <a class="btn" href="${downloadUrl}">
+              <span class="btn-icon">📥</span>
+              Télécharger mon pack maintenant
+            </a>
+          </div>
+        
+          <!-- Note de sécurité -->
+          <div class="security-note">
+            <p>🔒 Ce lien est personnel et ne doit pas être partagé avec d'autres personnes.</p>
+          </div>
+        
+          <div class="divider"></div>
+        
+          <p class="message">
+            Besoin d'aide ? Notre équipe est là pour vous accompagner.<br>
+            N'hésitez pas à nous contacter si vous avez la moindre question.
+          </p>
+        </div>
+      
+        <!-- Footer -->
+        <div class="footer">
+          <p style="font-weight: 600; color: #667eea; font-size: 16px;">V3clix Store</p>
+          <p>L'équipe qui vous accompagne dans vos projets</p>
+        
+          <div class="social-links">
+            <a href="#" title="Instagram">📷</a>
+            <a href="#" title="Twitter">🐦</a>
+            <a href="#" title="Discord">💬</a>
+          </div>
+        
+          <p style="margin-top: 20px; font-size: 12px;">
+            © 2024 V3clix. Tous droits réservés.
+          </p>
+        </div>
       </div>
     </body>
   </html>
