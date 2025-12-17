@@ -323,14 +323,6 @@ export default function V3clixStore() {
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={loadPacks}
-              disabled={loading}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors disabled:opacity-50"
-              title="Recharger les packs"
-            >
-              <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
-            </button>
-            <button
               onClick={() => isAdmin ? setIsAdmin(false) : setShowAdminLogin(true)}
               className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
             >
@@ -383,7 +375,7 @@ export default function V3clixStore() {
                 Annuler
               </button>
             </div>
-            <p className="text-sm text-slate-400 mt-4">Mot de passe par défaut: admin123</p>
+            
           </div>
         </div>
       )}
