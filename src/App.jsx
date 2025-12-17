@@ -14,8 +14,8 @@ export default function V3clixStore() {
   const [error, setError] = useState(null);
 
   // Configuration Supabase - REMPLACEZ PAR VOS VALEURS
-  const SUPABASE_URL = 'https://VOTRE_PROJET.supabase.co';
-  const SUPABASE_KEY = 'VOTRE_CLE_ANON_KEY';
+  const SUPABASE_URL = 'https://qmjszzqlyfnyhsvftwgi.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_ytpW_2-BKyGqPNQAJJWvdg_aN-XP6mm';
 
   useEffect(() => {
     loadPacks();
