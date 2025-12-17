@@ -491,6 +491,18 @@ export default function V3clixStore() {
                 <p className="text-xs text-slate-400 mt-1">Uploadez votre ZIP sur Contabo et collez le lien ici</p>
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Stribe Price ID</label>
+                <input
+                  type="text"
+                  value={editingPack?.price_id || ''}
+                  onChange={(e) => setEditingPack({...editingPack, price_id: e.target.value})}
+                  placeholder="price_xxx..."
+                  className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
+                />
+                <p className="text-xs text-slate-400 mt-1">Uploadez votre ZIP sur Contabo et collez le lien ici</p>
+              </div>
+
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -668,7 +680,7 @@ export default function V3clixStore() {
             <div className="flex items-center gap-4">
               <p className="text-slate-400">© 2024 V3clix Store - Tous droits réservés</p>
               <a
-                href="https://discord.gg/VOTRE_INVITE" 
+                href="https://discord.gg/QykwfUTKc5" 
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
