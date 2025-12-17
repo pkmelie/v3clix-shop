@@ -110,7 +110,8 @@ export default function V3clixStore() {
         image: editingPack.image || null,
         video_url: editingPack.video_url || null,
         zip_url: editingPack.zip_url || null,
-        featured: editingPack.featured || false
+        featured: editingPack.featured || false,
+        stripe_price_id: editingPack.stripe_price_id || null
       };
 
       let response;
@@ -190,9 +191,10 @@ export default function V3clixStore() {
     try {
       const priceMapping = {
         'Pack V3clix réaliste 1': 'price_1Sf1pW4joDytcB3qtdTmS6eU',
+        
       };
 
-      const priceId = priceMapping[pack.name];
+      const priceId = pack.stripe_price_id;
 
       if (!priceId) {
         alert('Ce pack n\'est pas encore configuré dans Stripe.');
