@@ -495,12 +495,12 @@ export default function V3clixStore() {
                 <label className="block text-sm font-medium text-slate-300 mb-2">Stribe Price ID</label>
                 <input
                   type="text"
-                  value={editingPack?.price_id || ''}
-                  onChange={(e) => setEditingPack({...editingPack, price_id: e.target.value})}
+                  value={editingPack?.stripe_price_id || ''}
+                  onChange={(e) => setEditingPack({...editingPack, stripe_price_id: e.target.value})}
                   placeholder="price_xxx..."
                   className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
                 />
-                <p className="text-xs text-slate-400 mt-1">Uploadez votre ZIP sur Contabo et collez le lien ici</p>
+                <p className="text-xs text-slate-400 mt-1">Trouver le price ID et collez le lien ici</p>
               </div>
 
               <div className="flex items-center gap-2">
