@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Plus, Edit2, Trash2, Save, X, Upload, Eye, Lock, Unlock, CheckCircle } from 'lucide-react';
+import { ShoppingCart, Plus, Edit2, Trash2, Save, X, Upload, Eye, Lock, Unlock, CheckCircle, RefreshCw } from 'lucide-react';
 
 export default function V3clixStore() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -10,6 +10,12 @@ export default function V3clixStore() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Configuration Supabase - REMPLACEZ PAR VOS VALEURS
+  const SUPABASE_URL = 'https://VOTRE_PROJET.supabase.co';
+  const SUPABASE_KEY = 'VOTRE_CLE_ANON_KEY';
 
   useEffect(() => {
     loadPacks();
@@ -17,44 +23,49 @@ export default function V3clixStore() {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('success') === 'true') {
       setShowSuccess(true);
-      // Nettoyer l'URL
       window.history.replaceState({}, '', '/');
     }
   }, []);
 
-  const loadPacks = () => {
+  const loadPacks = async () => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      const saved = localStorage.getItem('v3clix-packs');
-      if (saved) {
-        setPacks(JSON.parse(saved));
-      } else {
-        const defaultPacks = [
-          {
-            id: '1',
-            name: 'Pack V3clix réaliste 1',
-            price: 9.99,
-            description: 'Premier pack de contenus réalistes',
-            image: '',
-            videoUrl: '',
-            zipUrl: '',
-            featured: true
-          }
-        ];
-        setPacks(defaultPacks);
-        localStorage.setItem('v3clix-packs', JSON.stringify(defaultPacks));
-      }
-    } catch (error) {
-      console.log('Première utilisation');
-    }
-  };
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/packs?select=*&order=created_at.desc`, {
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+        },
+      });
 
-  const savePacks = (newPacks) => {
-    try {
-      localStorage.setItem('v3clix-packs', JSON.stringify(newPacks));
-      setPacks(newPacks);
+      if (!response.ok) {
+        throw new Error('Erreur lors du chargement des packs');
+      }
+
+      const data = await response.json();
+      setPacks(data);
     } catch (error) {
-      console.error('Erreur sauvegarde:', error);
-      alert('Erreur lors de la sauvegarde');
+      console.error('Erreur:', error);
+      setError('Impossible de charger les packs. Vérifiez votre configuration Supabase.');
+      
+      // Fallback sur des données par défaut
+      const defaultPacks = [
+        {
+          id: 1,
+          pack_id: 1,
+          name: 'Pack V3clix réaliste 1',
+          price: 9.99,
+          description: 'Premier pack de contenus réalistes',
+          image: '',
+          video_url: '',
+          zip_url: '',
+          featured: true
+        }
+      ];
+      setPacks(defaultPacks);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -70,43 +81,108 @@ export default function V3clixStore() {
 
   const handleAddPack = () => {
     const newPack = {
-      id: Date.now().toString(),
       name: `Pack V3clix réaliste ${packs.length + 1}`,
       price: 9.99,
       description: 'Description du pack',
       image: '',
-      videoUrl: '',
-      zipUrl: '',
+      video_url: '',
+      zip_url: '',
       featured: false
     };
     setEditingPack(newPack);
     setShowAddForm(true);
   };
 
-  const handleSavePack = () => {
+  const handleSavePack = async () => {
     if (!editingPack.name || !editingPack.price) {
       alert('Nom et prix sont obligatoires');
       return;
     }
 
-    const packExists = packs.find(p => p.id === editingPack.id);
-    let newPacks;
-    
-    if (packExists) {
-      newPacks = packs.map(p => p.id === editingPack.id ? editingPack : p);
-    } else {
-      newPacks = [...packs, editingPack];
-    }
+    try {
+      setLoading(true);
+      
+      // Préparer les données pour Supabase (colonnes optionnelles)
+      const packData = {
+        name: editingPack.name,
+        price: editingPack.price,
+        description: editingPack.description || null,
+        image: editingPack.image || null,
+        video_url: editingPack.video_url || null,
+        zip_url: editingPack.zip_url || null,
+        featured: editingPack.featured || false
+      };
 
-    savePacks(newPacks);
-    setEditingPack(null);
-    setShowAddForm(false);
+      let response;
+      
+      if (editingPack.id) {
+        // Mise à jour d'un pack existant (utilise l'id, pas pack_id)
+        response = await fetch(`${SUPABASE_URL}/rest/v1/packs?id=eq.${editingPack.id}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify(packData)
+        });
+      } else {
+        // Création d'un nouveau pack (pack_id sera auto-généré par Supabase)
+        response = await fetch(`${SUPABASE_URL}/rest/v1/packs`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify(packData)
+        });
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erreur lors de la sauvegarde');
+      }
+
+      alert('✅ Pack sauvegardé avec succès !');
+      setEditingPack(null);
+      setShowAddForm(false);
+      await loadPacks(); // Recharger les packs
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert('❌ Erreur lors de la sauvegarde : ' + error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDeletePack = (packId) => {
-    if (confirm('Supprimer ce pack ?')) {
-      const newPacks = packs.filter(p => p.id !== packId);
-      savePacks(newPacks);
+  const handleDeletePack = async (packId) => {
+    if (!confirm('Supprimer ce pack ?')) return;
+
+    try {
+      setLoading(true);
+      
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/packs?id=eq.${packId}`, {
+        method: 'DELETE',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Erreur lors de la suppression');
+      }
+
+      alert('✅ Pack supprimé avec succès !');
+      await loadPacks();
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert('❌ Erreur lors de la suppression : ' + error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -151,13 +227,11 @@ export default function V3clixStore() {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Vérifier la taille (max 10 MB)
     if (file.size > 10 * 1024 * 1024) {
       alert('❌ Image trop grande (max 10 MB)');
       return;
     }
 
-    // Vérifier le type
     if (!file.type.startsWith('image/')) {
       alert('❌ Fichier invalide. Veuillez sélectionner une image.');
       return;
@@ -166,12 +240,10 @@ export default function V3clixStore() {
     setUploading(true);
 
     try {
-      // Lire le fichier en base64
       const reader = new FileReader();
       
       reader.onload = async () => {
         try {
-          // Appeler l'API d'upload
           const response = await fetch('/api/upload-image', {
             method: 'POST',
             headers: {
@@ -179,7 +251,7 @@ export default function V3clixStore() {
             },
             body: JSON.stringify({
               image: reader.result,
-              fileName: file.name.replace(/\.[^/.]+$/, ''), // Sans extension
+              fileName: file.name.replace(/\.[^/.]+$/, ''),
             }),
           });
 
@@ -247,15 +319,37 @@ export default function V3clixStore() {
             </div>
             <h1 className="text-2xl font-bold text-white">V3clix Store</h1>
           </div>
-          <button
-            onClick={() => isAdmin ? setIsAdmin(false) : setShowAdminLogin(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
-          >
-            {isAdmin ? <Unlock size={18} /> : <Lock size={18} />}
-            {isAdmin ? 'Quitter Admin' : 'Admin'}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={loadPacks}
+              disabled={loading}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors disabled:opacity-50"
+              title="Recharger les packs"
+            >
+              <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+            </button>
+            <button
+              onClick={() => isAdmin ? setIsAdmin(false) : setShowAdminLogin(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+            >
+              {isAdmin ? <Unlock size={18} /> : <Lock size={18} />}
+              {isAdmin ? 'Quitter Admin' : 'Admin'}
+            </button>
+          </div>
         </div>
       </header>
+
+      {/* Erreur de configuration */}
+      {error && (
+        <div className="max-w-7xl mx-auto px-4 mt-4">
+          <div className="bg-red-900/30 border border-red-500/30 rounded-xl p-4">
+            <p className="text-red-300">⚠️ {error}</p>
+            <p className="text-sm text-red-400 mt-2">
+              Configurez SUPABASE_URL et SUPABASE_KEY dans le code, puis activez RLS sur votre table.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Admin Login Modal */}
       {showAdminLogin && (
@@ -298,7 +392,7 @@ export default function V3clixStore() {
           <div className="bg-slate-800 rounded-2xl p-6 max-w-2xl w-full border border-purple-500/20 my-8">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold text-white">
-                {packs.find(p => p.id === editingPack?.id) ? 'Modifier' : 'Ajouter'} le pack
+                {editingPack?.id ? 'Modifier' : 'Ajouter'} le pack
               </h2>
               <button
                 onClick={() => {
@@ -313,23 +407,25 @@ export default function V3clixStore() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Nom du pack</label>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Nom du pack *</label>
                 <input
                   type="text"
                   value={editingPack?.name || ''}
                   onChange={(e) => setEditingPack({...editingPack, name: e.target.value})}
                   className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
+                  placeholder="Pack V3clix réaliste 1"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Prix (€)</label>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Prix (€) *</label>
                 <input
                   type="number"
                   step="0.01"
                   value={editingPack?.price || ''}
                   onChange={(e) => setEditingPack({...editingPack, price: parseFloat(e.target.value)})}
                   className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
+                  placeholder="9.99"
                 />
               </div>
 
@@ -340,6 +436,7 @@ export default function V3clixStore() {
                   onChange={(e) => setEditingPack({...editingPack, description: e.target.value})}
                   rows="3"
                   className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
+                  placeholder="Description du pack..."
                 />
               </div>
 
@@ -375,8 +472,8 @@ export default function V3clixStore() {
                 <label className="block text-sm font-medium text-slate-300 mb-2">URL Vidéo (YouTube, Vimeo, etc.)</label>
                 <input
                   type="text"
-                  value={editingPack?.videoUrl || ''}
-                  onChange={(e) => setEditingPack({...editingPack, videoUrl: e.target.value})}
+                  value={editingPack?.video_url || ''}
+                  onChange={(e) => setEditingPack({...editingPack, video_url: e.target.value})}
                   placeholder="https://youtube.com/watch?v=..."
                   className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
                 />
@@ -386,8 +483,8 @@ export default function V3clixStore() {
                 <label className="block text-sm font-medium text-slate-300 mb-2">URL du fichier ZIP</label>
                 <input
                   type="text"
-                  value={editingPack?.zipUrl || ''}
-                  onChange={(e) => setEditingPack({...editingPack, zipUrl: e.target.value})}
+                  value={editingPack?.zip_url || ''}
+                  onChange={(e) => setEditingPack({...editingPack, zip_url: e.target.value})}
                   placeholder="https://votre-stockage.com/pack.zip"
                   className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
                 />
@@ -397,21 +494,23 @@ export default function V3clixStore() {
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
+                  id="featured"
                   checked={editingPack?.featured || false}
                   onChange={(e) => setEditingPack({...editingPack, featured: e.target.checked})}
                   className="w-4 h-4"
                 />
-                <label className="text-sm text-slate-300">Pack en vedette</label>
+                <label htmlFor="featured" className="text-sm text-slate-300">Pack en vedette ⭐</label>
               </div>
             </div>
 
             <div className="flex gap-2 mt-6">
               <button
                 onClick={handleSavePack}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+                disabled={loading}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors disabled:opacity-50"
               >
                 <Save size={18} />
-                Enregistrer
+                {loading ? 'Enregistrement...' : 'Enregistrer'}
               </button>
               <button
                 onClick={() => {
@@ -441,7 +540,10 @@ export default function V3clixStore() {
         {isAdmin && (
           <div className="mb-8 p-4 bg-purple-900/30 border border-purple-500/30 rounded-xl">
             <div className="flex justify-between items-center">
-              <p className="text-purple-300 font-medium">Mode Administration</p>
+              <div>
+                <p className="text-purple-300 font-medium">🔧 Mode Administration</p>
+                <p className="text-sm text-purple-400 mt-1">Données synchronisées avec Supabase</p>
+              </div>
               <button
                 onClick={handleAddPack}
                 className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
@@ -453,84 +555,98 @@ export default function V3clixStore() {
           </div>
         )}
 
-        {/* Packs Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {packs.map((pack) => (
-            <div
-              key={pack.id}
-              className={`bg-slate-800/50 backdrop-blur-sm rounded-2xl overflow-hidden border transition-all hover:scale-105 ${
-                pack.featured ? 'border-purple-500 shadow-lg shadow-purple-500/20' : 'border-slate-700'
-              }`}
-            >
-              {pack.featured && (
-                <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-center py-1 text-sm font-semibold">
-                  ⭐ EN VEDETTE
-                </div>
-              )}
-              
-              <div className="relative h-48 bg-gradient-to-br from-purple-600 to-pink-600 overflow-hidden">
-                {pack.image ? (
-                  <img src={pack.image} alt={pack.name} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Upload size={48} className="text-white/50" />
-                  </div>
-                )}
-              </div>
-
-              <div className="p-6">
-                <h3 className="text-xl font-bold text-white mb-2">{pack.name}</h3>
-                <p className="text-slate-300 text-sm mb-4">{pack.description}</p>
-                
-                {pack.videoUrl && (
-                  <a
-                    href={pack.videoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-purple-400 hover:text-purple-300 text-sm mb-4 transition-colors"
-                  >
-                    <Eye size={16} />
-                    Voir la vidéo de présentation
-                  </a>
-                )}
-
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-3xl font-bold text-white">{pack.price}€</span>
-                </div>
-
-                {isAdmin ? (
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setEditingPack(pack)}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-                    >
-                      <Edit2 size={16} />
-                      Modifier
-                    </button>
-                    <button
-                      onClick={() => handleDeletePack(pack.id)}
-                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => handleBuyPack(pack)}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition-all"
-                  >
-                    <ShoppingCart size={20} />
-                    Acheter maintenant
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {packs.length === 0 && (
+        {/* Loading State */}
+        {loading && packs.length === 0 && (
           <div className="text-center py-20">
-            <p className="text-slate-400 text-lg">Aucun pack disponible pour le moment</p>
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-500 mx-auto mb-4"></div>
+            <p className="text-slate-400">Chargement des packs depuis Supabase...</p>
+          </div>
+        )}
+
+        {/* Packs Grid */}
+        {!loading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {packs.map((pack) => (
+              <div
+                key={pack.id}
+                className={`bg-slate-800/50 backdrop-blur-sm rounded-2xl overflow-hidden border transition-all hover:scale-105 ${
+                  pack.featured ? 'border-purple-500 shadow-lg shadow-purple-500/20' : 'border-slate-700'
+                }`}
+              >
+                {pack.featured && (
+                  <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-center py-1 text-sm font-semibold">
+                    ⭐ EN VEDETTE
+                  </div>
+                )}
+                
+                <div className="relative h-48 bg-gradient-to-br from-purple-600 to-pink-600 overflow-hidden">
+                  {pack.image ? (
+                    <img src={pack.image} alt={pack.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Upload size={48} className="text-white/50" />
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-6">
+                  <h3 className="text-xl font-bold text-white mb-2">{pack.name}</h3>
+                  <p className="text-slate-300 text-sm mb-4">{pack.description || 'Aucune description disponible'}</p>
+                  
+                  {pack.video_url && (
+                    <a
+                      href={pack.video_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-purple-400 hover:text-purple-300 text-sm mb-4 transition-colors"
+                    >
+                      <Eye size={16} />
+                      Voir la vidéo de présentation
+                    </a>
+                  )}
+
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-3xl font-bold text-white">{pack.price}€</span>
+                    {isAdmin && (
+                      <span className="text-xs text-slate-500">ID: {pack.pack_id || pack.id}</span>
+                    )}
+                  </div>
+
+                  {isAdmin ? (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setEditingPack(pack)}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                      >
+                        <Edit2 size={16} />
+                        Modifier
+                      </button>
+                      <button
+                        onClick={() => handleDeletePack(pack.id)}
+                        className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => handleBuyPack(pack)}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg transition-all"
+                    >
+                      <ShoppingCart size={20} />
+                      Acheter maintenant
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!loading && packs.length === 0 && (
+          <div className="text-center py-20">
+            <p className="text-slate-400 text-lg mb-2">Aucun pack disponible pour le moment</p>
+            <p className="text-sm text-slate-500 mb-6">Les packs créés apparaîtront ici automatiquement</p>
             {isAdmin && (
               <button
                 onClick={handleAddPack}
@@ -542,6 +658,8 @@ export default function V3clixStore() {
           </div>
         )}
       </main>
+
+     
 
       {/* Footer */}
       <footer className="bg-black/30 backdrop-blur-md border-t border-purple-500/20 mt-20">
