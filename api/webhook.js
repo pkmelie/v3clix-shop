@@ -278,7 +278,7 @@ function getEmailTemplate(customerName, packName, downloadUrl) {
           <div class="logo-container">
             <div class="logo">
               <!-- Remplacez cette URL par votre logo -->
-              <img src="https://via.placeholder.com/100x100/667eea/ffffff?text=V3CLIX" alt="V3clix Logo">
+              <img src="https://eu2.contabostorage.com/a1ebf2af76e940ebadda8eeb2e11ada2:v3clix-files/logo.png" alt="V3clix Logo">
             </div>
           </div>
           <h1><span class="sparkle">✨</span> Merci pour votre achat ! <span class="sparkle">✨</span></h1>
