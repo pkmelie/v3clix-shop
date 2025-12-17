@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { ShoppingCart, Plus, Edit2, Trash2, Save, X, Upload, Eye, Lock, Unlock, CheckCircle } from 'lucide-react';
-import { supabase } from './lib/supabase';
 
 export default function V3clixStore() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -14,90 +13,48 @@ export default function V3clixStore() {
 
   useEffect(() => {
     loadPacks();
+    // Vérifier si on vient d'un paiement réussi
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('success') === 'true') {
       setShowSuccess(true);
+      // Nettoyer l'URL
       window.history.replaceState({}, '', '/');
     }
   }, []);
 
-  const loadPacks = async () => {
+  const loadPacks = () => {
     try {
-      const { data, error } = await supabase
-        .from('packs')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        const formattedPacks = data.map(pack => ({
-          id: pack.pack_id,
-          name: pack.name,
-          price: pack.price,
-          description: pack.description,
-          image: pack.image,
-          videoUrl: pack.video_url,
-          zipUrl: pack.zip_url,
-          featured: pack.featured
-        }));
-        setPacks(formattedPacks);
+      const saved = localStorage.getItem('v3clix-packs');
+      if (saved) {
+        setPacks(JSON.parse(saved));
       } else {
-        const defaultPack = {
-          pack_id: '1',
-          name: 'Pack V3clix réaliste 1',
-          price: 9.99,
-          description: 'Premier pack de contenus réalistes',
-          image: '',
-          video_url: '',
-          zip_url: '',
-          featured: true
-        };
-        
-        await supabase.from('packs').insert([defaultPack]);
-        setPacks([{
-          id: '1',
-          name: defaultPack.name,
-          price: defaultPack.price,
-          description: defaultPack.description,
-          image: defaultPack.image,
-          videoUrl: defaultPack.video_url,
-          zipUrl: defaultPack.zip_url,
-          featured: defaultPack.featured
-        }]);
+        const defaultPacks = [
+          {
+            id: '1',
+            name: 'Pack V3clix réaliste 1',
+            price: 9.99,
+            description: 'Premier pack de contenus réalistes',
+            image: '',
+            videoUrl: '',
+            zipUrl: '',
+            featured: true
+          }
+        ];
+        setPacks(defaultPacks);
+        localStorage.setItem('v3clix-packs', JSON.stringify(defaultPacks));
       }
     } catch (error) {
-      console.error('Erreur chargement packs:', error);
+      console.log('Première utilisation');
     }
   };
 
-  const savePacks = async (newPacks) => {
+  const savePacks = (newPacks) => {
     try {
-      for (const pack of newPacks) {
-        const supabasePack = {
-          pack_id: pack.id,
-          name: pack.name,
-          price: pack.price,
-          description: pack.description,
-          image: pack.image,
-          video_url: pack.videoUrl,
-          zip_url: pack.zipUrl,
-          featured: pack.featured
-        };
-
-        const { error } = await supabase
-          .from('packs')
-          .upsert(supabasePack, { onConflict: 'pack_id' });
-
-        if (error) throw error;
-      }
-
+      localStorage.setItem('v3clix-packs', JSON.stringify(newPacks));
       setPacks(newPacks);
-      alert('✅ Pack sauvegardé !');
-      await loadPacks();
     } catch (error) {
       console.error('Erreur sauvegarde:', error);
-      alert('❌ Erreur lors de la sauvegarde');
+      alert('Erreur lors de la sauvegarde');
     }
   };
 
@@ -146,23 +103,10 @@ export default function V3clixStore() {
     setShowAddForm(false);
   };
 
-  const handleDeletePack = async (packId) => {
+  const handleDeletePack = (packId) => {
     if (confirm('Supprimer ce pack ?')) {
-      try {
-        const { error } = await supabase
-          .from('packs')
-          .delete()
-          .eq('pack_id', packId);
-
-        if (error) throw error;
-
-        const newPacks = packs.filter(p => p.id !== packId);
-        setPacks(newPacks);
-        alert('✅ Pack supprimé !');
-      } catch (error) {
-        console.error('Erreur suppression:', error);
-        alert('❌ Erreur lors de la suppression');
-      }
+      const newPacks = packs.filter(p => p.id !== packId);
+      savePacks(newPacks);
     }
   };
 
@@ -207,11 +151,13 @@ export default function V3clixStore() {
     const file = e.target.files[0];
     if (!file) return;
 
+    // Vérifier la taille (max 10 MB)
     if (file.size > 10 * 1024 * 1024) {
       alert('❌ Image trop grande (max 10 MB)');
       return;
     }
 
+    // Vérifier le type
     if (!file.type.startsWith('image/')) {
       alert('❌ Fichier invalide. Veuillez sélectionner une image.');
       return;
@@ -220,10 +166,12 @@ export default function V3clixStore() {
     setUploading(true);
 
     try {
+      // Lire le fichier en base64
       const reader = new FileReader();
       
       reader.onload = async () => {
         try {
+          // Appeler l'API d'upload
           const response = await fetch('/api/upload-image', {
             method: 'POST',
             headers: {
@@ -231,7 +179,7 @@ export default function V3clixStore() {
             },
             body: JSON.stringify({
               image: reader.result,
-              fileName: file.name.replace(/\.[^/.]+$/, ''),
+              fileName: file.name.replace(/\.[^/.]+$/, ''), // Sans extension
             }),
           });
 
@@ -264,6 +212,7 @@ export default function V3clixStore() {
     }
   };
 
+  // Page de succès
   if (showSuccess) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
@@ -289,6 +238,7 @@ export default function V3clixStore() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      {/* Header */}
       <header className="bg-black/30 backdrop-blur-md border-b border-purple-500/20">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -307,6 +257,7 @@ export default function V3clixStore() {
         </div>
       </header>
 
+      {/* Admin Login Modal */}
       {showAdminLogin && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-purple-500/20">
@@ -341,6 +292,7 @@ export default function V3clixStore() {
         </div>
       )}
 
+      {/* Edit/Add Pack Modal */}
       {(editingPack || showAddForm) && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-slate-800 rounded-2xl p-6 max-w-2xl w-full border border-purple-500/20 my-8">
@@ -475,7 +427,9 @@ export default function V3clixStore() {
         </div>
       )}
 
+      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-12">
+        {/* Hero Section */}
         <div className="text-center mb-16">
           <h2 className="text-5xl font-bold text-white mb-4">
             Packs V3clix <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Réalistes</span>
@@ -483,6 +437,7 @@ export default function V3clixStore() {
           <p className="text-xl text-slate-300">Accédez instantanément à vos contenus après paiement</p>
         </div>
 
+        {/* Admin Controls */}
         {isAdmin && (
           <div className="mb-8 p-4 bg-purple-900/30 border border-purple-500/30 rounded-xl">
             <div className="flex justify-between items-center">
@@ -498,6 +453,7 @@ export default function V3clixStore() {
           </div>
         )}
 
+        {/* Packs Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {packs.map((pack) => (
             <div
@@ -587,6 +543,7 @@ export default function V3clixStore() {
         )}
       </main>
 
+      {/* Footer */}
       <footer className="bg-black/30 backdrop-blur-md border-t border-purple-500/20 mt-20">
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="flex flex-col items-center gap-4">
