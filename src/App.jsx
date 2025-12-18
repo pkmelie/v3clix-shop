@@ -542,9 +542,12 @@ export default function V3clixStore() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-12">
         {/* Hero Section */}
-        <h2 className="text-5xl font-bold text-white mb-4">
-          Packs V3clix <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Réalistes</span>
-        </h2>
+        <div className="text-center mb-16">
+          <h2 className="text-5xl font-bold text-white mb-4">
+            Packs V3clix <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Réalistes</span>
+          </h2>
+          <p className="text-xl text-slate-300">Accédez instantanément à vos contenus après paiement</p>
+        </div>
 
         {/* Admin Controls */}
         {isAdmin && (
