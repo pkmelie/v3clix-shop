@@ -18,6 +18,24 @@ export default function V3clixStore() {
   const SUPABASE_KEY = 'sb_publishable_ytpW_2-BKyGqPNQAJJWvdg_aN-XP6mm';
 
   useEffect(() => {
+    // SEO
+    document.title = "V3clix Shop - Packs GTA Réalistes et Contenus Graphiques Premium";
+
+    let metaDescription = document.querySelector('meta[name="description"]');
+    if (!metaDescription) {
+      metaDescription = document.createElement('meta');
+      metaDescription.name = 'description';
+      document.head.appendChild(metaDescription);
+    }
+    metaDescription.content = 'V3clix Shop - Boutique officielle de packs réalistes GTA et contenus graphiques premium. Téléchargement instantané.';
+
+    let metaKeywords = document.querySelector('meta[name="keywords"]');
+    if (!metaKeywords) {
+      metaKeywords = document.createElement('meta');
+      metaKeywords.name = 'keywords';
+      document.head.appendChild(metaKeywords);
+    }
+    metaKeywords.content = 'V3clix, v3clix shop, pack GTA, pack réaliste, contenu graphique, GTA RP';
     loadPacks();
     // Vérifier si on vient d'un paiement réussi
     const urlParams = new URLSearchParams(window.location.search);
