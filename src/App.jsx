@@ -88,7 +88,7 @@ export default function V3clixStore() {
   };
 
   const handleAdminLogin = () => {
-    if (adminPassword === 'Elieleo.312') {
+    if (adminPassword === 'Louloutemilo.31') {
       setIsAdmin(true);
       setShowAdminLogin(false);
       setAdminPassword('');
