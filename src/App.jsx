@@ -542,15 +542,10 @@ export default function V3clixStore() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-12">
         {/* Hero Section */}
-        <h1 className="text-5xl font-bold text-white mb-4">
-          <strong>V3clix</strong> - Packs <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">GTA Réalistes</span>
-        </h1>
-        <h2 className="text-2xl text-slate-300 mb-3">
-          <strong>Contenus graphiques premium</strong> et packs créatifs
+        <h2 className="text-5xl font-bold text-white mb-4">
+          Packs V3clix <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Réalistes</span>
         </h2>
-        <p className="text-lg text-slate-400">
-          Découvrez nos <strong>packs V3clix</strong> pour <strong>GTA RP</strong> et des <strong>contenus graphiques professionnels</strong>
-        </p>
+
         {/* Admin Controls */}
         {isAdmin && (
           <div className="mb-8 p-4 bg-purple-900/30 border border-purple-500/30 rounded-xl">
