@@ -339,7 +339,7 @@ export default function V3clixStore() {
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
               <div className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden">
-                <img src="/logo.png" alt="V3clix Logo" className="w-full h-full object-cover" />
+                <img src="https://eu2.contabostorage.com/a1ebf2af76e940ebadda8eeb2e11ada2:v3clix-files/logo.png" alt="V3clix Logo" className="w-full h-full object-cover" />
               </div>
             </div>
             <h1 className="text-2xl font-bold text-white">V3clix Store</h1>
