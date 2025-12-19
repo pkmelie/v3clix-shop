@@ -36,6 +36,15 @@ export default function V3clixStore() {
       document.head.appendChild(metaKeywords);
     }
     metaKeywords.content = 'V3clix, v3clix shop, pack GTA, pack réaliste, contenu graphique, GTA RP';
+
+    let favicon = document.querySelector("link[rel='icon']");
+    if (!favicon) {
+      favicon = document.createElement('link');
+      favicon.rel = 'icon';
+      document.head.appendChild(favicon);
+    }
+    favicon.href = '/logo.png'; // Changez le nom si nécessaire
+    
     loadPacks();
     // Vérifier si on vient d'un paiement réussi
     const urlParams = new URLSearchParams(window.location.search);
