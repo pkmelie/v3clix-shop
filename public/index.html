@@ -1,0 +1,59 @@
+// --- CHAT WEBSOCKET ---
+let ws = null;
+let clientId = localStorage.getItem('ts_clientId') || null;
+let chatOpen = false;
+
+function initChat() {
+  const WS_URL = location.protocol === 'https:'
+    ? `wss://${location.host}`
+    : `ws://${location.host}`;
+  ws = new WebSocket(WS_URL);
+  ws.onopen = () => {
+    ws.send(JSON.stringify({ type: 'client_connect', clientId }));
+  };
+  ws.onmessage = (e) => {
+    const data = JSON.parse(e.data);
+    if (data.type === 'connected') {
+      clientId = data.clientId;
+      localStorage.setItem('ts_clientId', clientId);
+      // Afficher l'historique
+      data.messages.forEach(m => appendMsg(m.from === 'admin' ? 'admin' : 'user', m.text, false));
+    }
+    if (data.type === 'new_message') {
+      appendMsg('admin', data.message.text);
+      if (!chatOpen) {
+        document.getElementById('chatBadge').style.display = 'flex';
+      }
+    }
+  };
+}
+
+function toggleChat() {
+  chatOpen = !chatOpen;
+  document.getElementById('chatOverlay').classList.toggle('open', chatOpen);
+  document.getElementById('chatFab').innerHTML = chatOpen ? '✕' : '💬';
+  if (chatOpen) document.getElementById('chatBadge').style.display = 'none';
+  if (!ws || ws.readyState !== 1) initChat();
+}
+
+function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text || !ws || ws.readyState !== 1) return;
+  ws.send(JSON.stringify({ type: 'client_message', clientId, text }));
+  appendMsg('user', text);
+  input.value = '';
+}
+```
+
+---
+
+## 🚀 Déploiement sur Railway
+
+**1.** Va sur [railway.app](https://railway.app) → New Project → Deploy from GitHub
+
+**2.** Push ton dossier `techstore/` sur GitHub
+
+**3.** Dans Railway, ajoute une variable d'environnement :
+```
+ADMIN_PASSWORD = ton_mot_de_passe_secret
